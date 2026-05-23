@@ -38,6 +38,12 @@ export const API_ENDPOINTS = {
     personaDetail: (id: string) => `/simulation/personas/${id}/`,
   },
   googleFormsImport: {
-    import: "/surveys/import/google/",
+    import: "/import/google-forms/",
+  },
+  analytics: {
+    dashboard: "/analytics/dashboard/",
+    survey: (id: number | string) => `/analytics/surveys/${id}/`,
+    campaign: (id: number | string) => `/analytics/campaigns/${id}/`,
+    engagement: "/analytics/engagement/",
   },
 };

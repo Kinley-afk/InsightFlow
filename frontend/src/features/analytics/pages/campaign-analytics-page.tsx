@@ -1,5 +1,5 @@
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Mail, MousePointerClick, Send, TrendingUp } from "lucide-react";
+import { ArrowLeft, Mail, Send, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageContainer } from "@/components/layout/page-container";
 import { AnalyticsShell } from "@/features/analytics/components/layouts/analytics-shell";
@@ -7,65 +7,98 @@ import { AnalyticsGrid } from "@/features/analytics/components/layouts/analytics
 import { AnalyticsDashboardHeader } from "@/features/analytics/components/layouts/dashboard-header";
 import { StatGrid } from "@/features/analytics/components/metrics/stat-grid";
 import { AnalyticsCard } from "@/features/analytics/components/widgets/analytics-card";
-import { AnalyticsLineChart } from "@/features/analytics/components/charts/line-chart";
-import { AnalyticsBarChart } from "@/features/analytics/components/charts/bar-chart";
+import { AnalyticsTrendChart } from "@/features/analytics/components/charts/trend-chart";
+import { AnalyticsFunnelChart } from "@/features/analytics/components/charts/funnel-chart";
 import { PercentageCard } from "@/features/analytics/components/metrics/percentage-card";
-import { MOCK_CAMPAIGN_ANALYTICS, CHART_COLORS } from "@/features/analytics/constants";
-import type { MetricCardData } from "@/features/analytics/types";
+import { AnalyticsSkeleton } from "@/features/analytics/components/states/analytics-skeleton";
+import { ErrorAnalyticsState } from "@/features/analytics/components/states/error-analytics-state";
+import { useCampaignAnalytics } from "@/features/analytics/hooks/use-analytics";
+import { CHART_COLORS } from "@/features/analytics/constants";
+import type { MetricCardData, TimeSeriesPoint, FunnelStep } from "@/features/analytics/types";
 
 export default function CampaignAnalyticsPage() {
   const { campaignId } = useParams<{ campaignId: string }>();
-  const data = MOCK_CAMPAIGN_ANALYTICS;
+  const { data, isLoading, isError, refetch } = useCampaignAnalytics(campaignId);
+
+  const backNav = (
+    <div>
+      <Button variant="ghost" size="sm" asChild className="-ml-2 gap-1.5 text-text-secondary">
+        <Link to="/analytics">
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          Back to Overview
+        </Link>
+      </Button>
+    </div>
+  );
+
+  if (isLoading) {
+    return (
+      <PageContainer>
+        <AnalyticsSkeleton />
+      </PageContainer>
+    );
+  }
+
+  if (isError || !data) {
+    return (
+      <PageContainer>
+        <AnalyticsShell>
+          {backNav}
+          <ErrorAnalyticsState
+            message="Could not load campaign analytics. Please try again."
+            onRetry={() => void refetch()}
+          />
+        </AnalyticsShell>
+      </PageContainer>
+    );
+  }
 
   const kpiMetrics: MetricCardData[] = [
     {
       label: "Emails Sent",
-      value: data.sentCount,
+      value: data.metrics.emails_sent,
       icon: Send,
       description: "total recipients",
     },
     {
-      label: "Open Rate",
-      value: `${data.openRate}%`,
-      change: "+5.3%",
-      trend: "up",
+      label: "Delivery Rate",
+      value: `${data.metrics.delivery_rate.toFixed(1)}%`,
       icon: Mail,
-      description: "vs. industry avg",
+      description: "successfully delivered",
     },
     {
-      label: "Click Rate",
-      value: `${data.clickRate}%`,
-      change: "+2.1%",
-      trend: "up",
-      icon: MousePointerClick,
-      description: "of opened emails",
-    },
-    {
-      label: "Response Conversion",
-      value: `${data.responseConversion}%`,
-      change: "+8.4%",
-      trend: "up",
+      label: "Response Rate",
+      value: `${data.metrics.response_rate.toFixed(1)}%`,
       icon: TrendingUp,
       description: "sent → completed",
     },
+    {
+      label: "Total Responses",
+      value: data.metrics.total_responses,
+      icon: TrendingUp,
+      description: "survey submissions",
+    },
   ];
+
+  const deliveryTrend: TimeSeriesPoint[] = data.charts.delivery_trend.map((pt) => ({
+    date: pt.date,
+    value: pt.value,
+  }));
+
+  const funnel: FunnelStep[] = data.funnel.map((step) => ({
+    label: step.label,
+    value: step.value,
+    percentage: step.percentage,
+  }));
 
   return (
     <PageContainer>
       <AnalyticsShell>
-        {/* Back navigation */}
-        <div>
-          <Button variant="ghost" size="sm" asChild className="-ml-2 gap-1.5 text-text-secondary">
-            <Link to="/analytics">
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-              Back to Overview
-            </Link>
-          </Button>
-        </div>
+        {backNav}
 
         <AnalyticsDashboardHeader
-          title={data.title}
-          description={`Campaign analytics · ID: ${campaignId ?? data.campaignId}`}
+          title="Campaign Analytics"
+          description={`Campaign ID: ${campaignId ?? "—"}`}
         />
 
         {/* KPIs */}
@@ -74,50 +107,47 @@ export default function CampaignAnalyticsPage() {
         {/* Rate summary cards */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <PercentageCard
-            label="Open Rate"
-            percentage={data.openRate}
-            description="Recipients who opened the survey email"
+            label="Delivery Rate"
+            percentage={data.metrics.delivery_rate}
+            description="Recipients who received the survey email"
             color={CHART_COLORS.primary}
           />
           <PercentageCard
-            label="Click Rate"
-            percentage={data.clickRate}
-            description="Recipients who clicked the survey link"
+            label="Response Rate"
+            percentage={data.metrics.response_rate}
+            description="Recipients who completed the survey"
             color={CHART_COLORS.secondary}
           />
           <PercentageCard
-            label="Conversion Rate"
-            percentage={data.responseConversion}
-            description="Recipients who completed the survey"
-            color={CHART_COLORS.success}
+            label="Failed"
+            percentage={
+              data.metrics.emails_sent > 0
+                ? (data.metrics.emails_failed / data.metrics.emails_sent) * 100
+                : 0
+            }
+            description="Delivery failures"
+            color={CHART_COLORS.danger}
           />
         </div>
 
-        {/* Open trend + reminder performance */}
+        {/* Delivery trend + funnel */}
         <AnalyticsGrid>
           <AnalyticsCard
-            title="Open & Click Trend"
-            description="Daily email opens and clicks after send"
-            footer="Opens shown solid · Clicks shown dashed"
+            title="Delivery Trend"
+            description="Daily successful deliveries over the last 30 days"
           >
-            <AnalyticsLineChart
-              data={data.openTrend}
-              primaryLabel="Opens"
-              secondaryLabel="Clicks"
+            <AnalyticsTrendChart
+              data={deliveryTrend}
+              label="Delivered"
               height={250}
             />
           </AnalyticsCard>
 
           <AnalyticsCard
-            title="Reminder Performance"
-            description="Responses attributed to each send/reminder"
+            title="Campaign Funnel"
+            description="From email send to survey response"
           >
-            <AnalyticsBarChart
-              data={data.reminderPerformance}
-              label="Responses"
-              useItemColors
-              height={250}
-            />
+            <AnalyticsFunnelChart data={funnel} />
           </AnalyticsCard>
         </AnalyticsGrid>
       </AnalyticsShell>

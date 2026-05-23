@@ -106,9 +106,7 @@ export function ImportModal({ open, onOpenChange }: Props) {
           {(currentStatus === "idle" || currentStatus === "error") && (
             <>
               <ImportGuide />
-              {currentStatus === "idle" && (
-                <ImportForm onSubmit={handleSubmit} isPending={isPending} />
-              )}
+              <ImportForm onSubmit={handleSubmit} isPending={isPending} />
             </>
           )}
         </div>

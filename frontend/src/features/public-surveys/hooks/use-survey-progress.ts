@@ -19,7 +19,7 @@ export function useSurveyProgress(
   formValues: Record<string, AnswerValue>
 ): SurveyProgressResult {
   const totalCount = questions.length;
-  const answeredCount = questions.filter((q) => isAnswered(formValues[q.id])).length;
+  const answeredCount = questions.filter((q) => isAnswered(formValues[String(q.id)])).length;
   const percentage = totalCount === 0 ? 0 : Math.round((answeredCount / totalCount) * 100);
 
   return { answeredCount, totalCount, percentage };

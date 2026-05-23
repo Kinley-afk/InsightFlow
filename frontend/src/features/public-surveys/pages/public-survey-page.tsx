@@ -68,9 +68,10 @@ export default function PublicSurveyPage() {
   useEffect(() => {
     if (!survey) return;
     survey.questions.forEach((question) => {
-      if (answeredTrackedRef.current.has(question.id)) return;
-      if (!isAnswered(formValues[question.id])) return;
-      answeredTrackedRef.current.add(question.id);
+      const fieldKey = String(question.id);
+      if (answeredTrackedRef.current.has(fieldKey)) return;
+      if (!isAnswered(formValues[fieldKey])) return;
+      answeredTrackedRef.current.add(fieldKey);
       void trackEngagementEvent({
         eventType: "question_answered",
         survey,
@@ -109,12 +110,12 @@ export default function PublicSurveyPage() {
     // Validate required questions before sending
     const missingRequired = survey.questions.filter((q) => {
       if (!q.is_required) return false;
-      return !isAnswered(values[q.id]);
+      return !isAnswered(values[String(q.id)]);
     });
 
     if (missingRequired.length > 0) {
       missingRequired.forEach((q) => {
-        setError(q.id as never, {
+        setError(String(q.id) as never, {
           type: "required",
           message: "This question is required.",
         });

@@ -21,8 +21,9 @@ export function RatingQuestion({ question }: RatingQuestionProps) {
 
   const min: number = question.metadata.min_rating ?? DEFAULT_RATING_MIN;
   const max: number = question.metadata.max_rating ?? DEFAULT_RATING_MAX;
-  const selectedRating = watch(question.id) as number | null | undefined;
-  const error = errors[question.id];
+  const fieldName = String(question.id);
+  const selectedRating = watch(fieldName) as number | null | undefined;
+  const error = errors[fieldName];
 
   const ratings = Array.from({ length: max - min + 1 }, (_, i) => min + i);
 
@@ -51,7 +52,7 @@ export function RatingQuestion({ question }: RatingQuestionProps) {
               aria-checked={isSelected}
               aria-label={`${rating} out of ${max}`}
               onClick={() =>
-                setValue(question.id, isSelected ? null : rating, { shouldValidate: true })
+                setValue(fieldName, isSelected ? null : rating, { shouldValidate: true })
               }
               className={cn(
                 "flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg border text-sm font-semibold transition-all",

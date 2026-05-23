@@ -21,8 +21,10 @@ export default function AudienceFormPage({ mode }: Props) {
   const { data: audience, isLoading } = useAudienceDetail(mode === "edit" ? audienceId : undefined);
 
   useEffect(() => {
-    if (createAudience.isSuccess) navigate("/dashboard/audiences");
-  }, [createAudience.isSuccess, navigate]);
+    if (createAudience.isSuccess && createAudience.data?.id) {
+      navigate(`/dashboard/audiences/${createAudience.data.id}`);
+    }
+  }, [createAudience.isSuccess, createAudience.data?.id, navigate]);
 
   useEffect(() => {
     if (updateAudience.isSuccess && audienceId) navigate(`/dashboard/audiences/${audienceId}`);

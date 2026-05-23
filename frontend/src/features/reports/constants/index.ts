@@ -137,13 +137,7 @@ export const EXPORT_STATUS_PROGRESS: Record<string, number> = {
 export const DEFAULT_REPORT_CONFIG = {
   title: "",
   templateId: "academic_research",
-  sections: [
-    "cover",
-    "executive_summary",
-    "metrics_overview",
-    "charts_analytics",
-    "conclusions",
-  ] as ReportSectionKey[],
+  sections: ["cover"] as ReportSectionKey[],
   includeCharts: true,
   includeAiInsights: false,
   organization: "",

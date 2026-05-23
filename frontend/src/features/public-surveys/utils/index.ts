@@ -10,8 +10,9 @@ export function buildAnswerPayload(
   formValues: Record<string, AnswerValue>
 ): AnswerPayload[] {
   return questions.map((q) => ({
+    // Backend expects numeric question_id; form stores values keyed by String(id)
     question_id: q.id,
-    value: formValues[q.id] ?? null,
+    value: formValues[String(q.id)] ?? null,
   }));
 }
 

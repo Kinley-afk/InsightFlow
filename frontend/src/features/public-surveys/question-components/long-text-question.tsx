@@ -17,7 +17,8 @@ export function LongTextQuestion({ question }: LongTextQuestionProps) {
     formState: { errors },
   } = useFormContext<SurveyFormValues>();
 
-  const error = errors[question.id];
+  const fieldName = String(question.id);
+  const error = errors[fieldName];
 
   return (
     <div className="space-y-2">
@@ -28,7 +29,7 @@ export function LongTextQuestion({ question }: LongTextQuestionProps) {
         aria-invalid={!!error}
         aria-describedby={error ? `error-${question.id}` : undefined}
         className="resize-none text-base leading-relaxed"
-        {...register(question.id as never)}
+        {...register(fieldName as never)}
       />
       {error && (
         <p

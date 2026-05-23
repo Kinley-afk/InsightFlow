@@ -17,7 +17,8 @@ export function ShortTextQuestion({ question }: ShortTextQuestionProps) {
     formState: { errors },
   } = useFormContext<SurveyFormValues>();
 
-  const error = errors[question.id];
+  const fieldName = String(question.id);
+  const error = errors[fieldName];
 
   return (
     <div className="space-y-2">
@@ -28,7 +29,7 @@ export function ShortTextQuestion({ question }: ShortTextQuestionProps) {
         aria-invalid={!!error}
         aria-describedby={error ? `error-${question.id}` : undefined}
         className="h-11 text-base"
-        {...register(question.id as never)}
+        {...register(fieldName as never)}
       />
       {error && (
         <p

@@ -7,52 +7,70 @@ import { StatGrid } from "@/features/analytics/components/metrics/stat-grid";
 import { AnalyticsCard } from "@/features/analytics/components/widgets/analytics-card";
 import { AnalyticsTrendChart } from "@/features/analytics/components/charts/trend-chart";
 import { AnalyticsBarChart } from "@/features/analytics/components/charts/bar-chart";
-import { MOCK_DASHBOARD_OVERVIEW } from "@/features/analytics/constants";
-import type { MetricCardData, CategoryPoint } from "@/features/analytics/types";
-
-const overview = MOCK_DASHBOARD_OVERVIEW;
-
-const kpiMetrics: MetricCardData[] = [
-  {
-    label: "Total Responses",
-    value: overview.totalResponses,
-    change: "+18%",
-    trend: "up",
-    icon: BarChart3,
-    description: "vs. last month",
-  },
-  {
-    label: "Completion Rate",
-    value: `${overview.completionRate}%`,
-    change: "+4.2%",
-    trend: "up",
-    icon: CheckSquare,
-    description: "avg. across surveys",
-  },
-  {
-    label: "Open Rate",
-    value: `${overview.openRate}%`,
-    change: "+1.8%",
-    trend: "up",
-    icon: Mail,
-    description: "email campaigns",
-  },
-  {
-    label: "Drop-Off Rate",
-    value: `${overview.dropOffRate}%`,
-    change: "−2.1%",
-    trend: "up",
-    icon: TrendingDown,
-    description: "improvement",
-  },
-];
-
-const topSurveysData: CategoryPoint[] = overview.topSurveys.map((s) => ({
-  name: s.title.length > 22 ? s.title.slice(0, 22) + "…" : s.title,
-  value: s.responses,
-}));
+import { AnalyticsSkeleton } from "@/features/analytics/components/states/analytics-skeleton";
+import { ErrorAnalyticsState } from "@/features/analytics/components/states/error-analytics-state";
+import { useDashboardAnalytics } from "@/features/analytics/hooks/use-analytics";
+import type { MetricCardData, CategoryPoint, TimeSeriesPoint } from "@/features/analytics/types";
 
 export default function AnalyticsPage() {
+  const { data, isLoading, isError, refetch } = useDashboardAnalytics();
+
+  if (isLoading) {
+    return (
+      <PageContainer>
+        <AnalyticsSkeleton />
+      </PageContainer>
+    );
+  }
+
+  if (isError || !data) {
+    return (
+      <PageContainer>
+        <ErrorAnalyticsState
+          message="Could not load analytics overview. Please try again."
+          onRetry={() => void refetch()}
+        />
+      </PageContainer>
+    );
+  }
+
+  const kpiMetrics: MetricCardData[] = [
+    {
+      label: "Total Responses",
+      value: data.metrics.total_responses,
+      icon: BarChart3,
+      description: "across all surveys",
+    },
+    {
+      label: "Completion Rate",
+      value: `${data.metrics.overall_response_rate.toFixed(1)}%`,
+      icon: CheckSquare,
+      description: "emails sent → responses",
+    },
+    {
+      label: "Campaigns",
+      value: data.metrics.total_campaigns,
+      icon: Mail,
+      description: "total email campaigns",
+    },
+    {
+      label: "Surveys",
+      value: data.metrics.total_surveys,
+      icon: TrendingDown,
+      description: "total surveys created",
+    },
+  ];
+
+  const responseTrend: TimeSeriesPoint[] = data.charts.response_trend.map((pt) => ({
+    date: pt.date,
+    value: pt.value,
+  }));
+
+  const topSurveysData: CategoryPoint[] = data.charts.top_surveys.map((s) => ({
+    name: s.title.length > 22 ? s.title.slice(0, 22) + "…" : s.title,
+    value: s.response_count,
+  }));
+
   return (
     <PageContainer>
       <AnalyticsShell>
@@ -68,11 +86,10 @@ export default function AnalyticsPage() {
         <AnalyticsGrid>
           <AnalyticsCard
             title="Response Trend"
-            description="Total responses collected over time"
-            footer="Based on all surveys in the last 8 months"
+            description="Total responses collected over the last 30 days"
           >
             <AnalyticsTrendChart
-              data={overview.responseTrend}
+              data={responseTrend}
               label="Responses"
               height={260}
             />
@@ -99,14 +116,14 @@ export default function AnalyticsPage() {
                 <MousePointerClick className="h-5 w-5 text-primary-500" aria-hidden="true" />
               </span>
               <div>
-                <p className="text-xs font-medium text-text-secondary">Click Rate</p>
+                <p className="text-xs font-medium text-text-secondary">Emails Sent</p>
                 <p className="text-2xl font-extrabold text-text-primary">
-                  {overview.clickRate}%
+                  {data.metrics.total_emails_sent.toLocaleString()}
                 </p>
               </div>
             </div>
             <p className="mt-3 text-xs text-text-muted">
-              Across all active distribution campaigns
+              Across all distribution campaigns
             </p>
           </div>
 
@@ -116,9 +133,9 @@ export default function AnalyticsPage() {
             </p>
             <ul className="mt-3 space-y-2" role="list">
               {[
-                "Completion rates have improved by 4.2% compared to last month.",
-                "Drop-off rates are declining — survey design improvements are working.",
-                "Top 5 surveys account for 83% of total responses.",
+                `${data.metrics.total_surveys} surveys created across your account.`,
+                `${data.metrics.total_responses} total responses collected.`,
+                `${data.metrics.total_campaigns} email campaigns launched.`,
               ].map((insight) => (
                 <li
                   key={insight}

@@ -34,11 +34,21 @@ class PublicSurveyDetailView(APIView):
 
     def get(self, request, pk):
         try:
-            survey = (
-                Survey.objects
-                .prefetch_related("questions")
-                .get(pk=pk, status=SURVEY_STATUS_PUBLISHED)
-            )
+            # Support both integer PK and slug string
+            try:
+                pk_int = int(pk)
+                survey = (
+                    Survey.objects
+                    .prefetch_related("questions")
+                    .get(pk=pk_int, status=SURVEY_STATUS_PUBLISHED)
+                )
+            except (ValueError, TypeError):
+                # pk is a slug string — fall back to slug lookup
+                survey = (
+                    Survey.objects
+                    .prefetch_related("questions")
+                    .get(slug=pk, status=SURVEY_STATUS_PUBLISHED)
+                )
         except Survey.DoesNotExist:
             return error_response(
                 "This survey is unavailable.",
@@ -80,7 +90,11 @@ class PublicSurveySubmitView(APIView):
     def post(self, request, pk):
         # --- Resolve survey (must exist and be published) ---
         try:
-            survey = Survey.objects.get(pk=pk, status=SURVEY_STATUS_PUBLISHED)
+            try:
+                pk_int = int(pk)
+                survey = Survey.objects.get(pk=pk_int, status=SURVEY_STATUS_PUBLISHED)
+            except (ValueError, TypeError):
+                survey = Survey.objects.get(slug=pk, status=SURVEY_STATUS_PUBLISHED)
         except Survey.DoesNotExist:
             return error_response(
                 "Survey not found or not available for submission.",

@@ -23,17 +23,19 @@ export function CheckboxQuestion({ question }: CheckboxQuestionProps) {
     formState: { errors },
   } = useFormContext<SurveyFormValues>();
 
+  // Always use string keys for react-hook-form (backend returns numeric id)
+  const fieldName = String(question.id);
   const choices: string[] = question.metadata.choices ?? [];
   // Ensure field is registered so watch triggers re-renders
-  register(question.id as never);
-  const selectedValues: string[] = ((watch(question.id as never) as unknown) as string[]) ?? [];
-  const error = errors[question.id];
+  register(fieldName as never);
+  const selectedValues: string[] = ((watch(fieldName as never) as unknown) as string[]) ?? [];
+  const error = errors[fieldName];
 
   function handleToggle(choice: string, checked: boolean) {
     const next = checked
       ? [...selectedValues, choice]
       : selectedValues.filter((v) => v !== choice);
-    setValue(question.id, next, { shouldValidate: true });
+    setValue(fieldName, next, { shouldValidate: true });
   }
 
   return (

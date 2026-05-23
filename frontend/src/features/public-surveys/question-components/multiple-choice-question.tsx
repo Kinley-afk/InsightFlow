@@ -25,13 +25,15 @@ export function MultipleChoiceQuestion({ question }: MultipleChoiceQuestionProps
     formState: { errors },
   } = useFormContext<SurveyFormValues>();
 
+  // Always use string keys for react-hook-form (backend returns numeric id)
+  const fieldName = String(question.id);
   const choices: string[] = question.metadata.choices ?? [];
   // watch re-renders this component whenever the field value changes
-  const selectedValue = (watch(question.id as never) as unknown) as string | undefined;
-  const error = errors[question.id];
+  const selectedValue = (watch(fieldName as never) as unknown) as string | undefined;
+  const error = errors[fieldName];
 
   // Register once — react-hook-form manages the underlying value
-  const registration = register(question.id as never);
+  const registration = register(fieldName as never);
 
   return (
     <div

@@ -8,6 +8,8 @@ VALID_STATUSES = {s[0] for s in SURVEY_STATUS_CHOICES}
 
 class SurveySerializer(serializers.ModelSerializer):
     questions = QuestionSerializer(many=True, read_only=True)
+    response_count = serializers.SerializerMethodField()
+    completion_rate = serializers.SerializerMethodField()
 
     class Meta:
         model = Survey
@@ -22,8 +24,34 @@ class SurveySerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
             "questions",
+            "response_count",
+            "completion_rate",
         ]
         read_only_fields = ["id", "owner", "slug", "created_at", "updated_at"]
+
+    def get_response_count(self, obj):
+        """Total number of submitted responses for this survey."""
+        return obj.responses.count()
+
+    def get_completion_rate(self, obj):
+        """
+        Completion rate as a percentage.
+        Defined as: responses / emails_sent * 100 if campaigns exist,
+        otherwise None (no distribution baseline).
+        """
+        from apps.email_campaigns.models import DeliveryLog
+        from apps.email_campaigns.constants import DELIVERY_STATUS_SENT
+
+        emails_sent = DeliveryLog.objects.filter(
+            campaign__survey=obj,
+            status=DELIVERY_STATUS_SENT,
+        ).count()
+
+        if not emails_sent:
+            return None
+
+        response_count = obj.responses.count()
+        return round((response_count / emails_sent) * 100, 1)
 
     def validate_title(self, value):
         if not value or not value.strip():
