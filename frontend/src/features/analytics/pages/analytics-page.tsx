@@ -1,4 +1,5 @@
-import { BarChart3, CheckSquare, Mail, TrendingDown, MousePointerClick } from "lucide-react";
+import { BarChart3, CheckSquare, Mail, TrendingDown, MousePointerClick, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import { PageContainer } from "@/components/layout/page-container";
 import { AnalyticsShell } from "@/features/analytics/components/layouts/analytics-shell";
 import { AnalyticsGrid } from "@/features/analytics/components/layouts/analytics-grid";
@@ -107,6 +108,34 @@ export default function AnalyticsPage() {
             />
           </AnalyticsCard>
         </AnalyticsGrid>
+
+        {/* Top surveys with clickable links */}
+        {data.charts.top_surveys.length > 0 && (
+          <div className="rounded-xl border border-border-default bg-white p-5 shadow-sm dark:bg-card">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-sm font-semibold text-text-primary">Survey Analytics</p>
+              <p className="text-xs text-text-muted">Click a survey to view detailed analytics</p>
+            </div>
+            <ul className="divide-y divide-border-soft">
+              {data.charts.top_surveys.map((s) => (
+                <li key={s.survey_id}>
+                  <Link
+                    to={`/dashboard/analytics/surveys/${s.survey_id}`}
+                    className="flex items-center justify-between py-2.5 text-sm hover:text-primary-500 transition-colors group"
+                  >
+                    <span className="truncate text-text-primary group-hover:text-primary-500">
+                      {s.title}
+                    </span>
+                    <span className="flex items-center gap-1.5 shrink-0 ml-3 text-text-muted group-hover:text-primary-500">
+                      <span className="font-medium">{s.response_count}</span>
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Insight spotlight row */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

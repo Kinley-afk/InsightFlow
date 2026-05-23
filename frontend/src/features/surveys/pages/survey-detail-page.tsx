@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { Pencil, Globe, Trash2 } from "lucide-react";
+import { BarChart3, Pencil, Globe, Trash2 } from "lucide-react";
 import { PageContainer } from "@/components/layout/page-container";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -88,6 +88,14 @@ export default function SurveyDetailPage() {
                   slug={survey.slug}
                 />
               )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate(`/dashboard/analytics/surveys/${survey.id}`)}
+              >
+                <BarChart3 className="mr-1.5 h-3.5 w-3.5" />
+                Analytics
+              </Button>
               <Button
                 variant="outline"
                 size="sm"

@@ -1,12 +1,13 @@
 import { Link, useParams } from "react-router-dom";
-import { Edit3 } from "lucide-react";
+import { BarChart3, Edit3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CampaignHeader } from "@/features/email-campaigns/components/campaign-header";
 import { CampaignStatusBadge } from "@/features/email-campaigns/components/campaign-status-badge";
 
 export default function CampaignDetailPage() {
-  const { id } = useParams();
+  const { campaignId, id } = useParams();
+  const resolvedId = campaignId ?? id;
 
   return (
     <div className="space-y-6">
@@ -19,7 +20,7 @@ export default function CampaignDetailPage() {
         <CardHeader className="gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <CardTitle>Draft campaign</CardTitle>
-            <p className="mt-1 text-sm text-text-secondary">Reference ID: {id}</p>
+            <p className="mt-1 text-sm text-text-secondary">Reference ID: {resolvedId}</p>
           </div>
           <CampaignStatusBadge status="draft" />
         </CardHeader>
@@ -28,12 +29,20 @@ export default function CampaignDetailPage() {
             This screen reserves the detail route for campaign management while Unit 23 focuses on visual workflows and
             local state.
           </p>
-          <Button asChild>
-            <Link to={`/dashboard/campaigns/${id}/edit`}>
-              <Edit3 className="h-4 w-4" />
-              Edit Campaign
-            </Link>
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" asChild>
+              <Link to={`/dashboard/analytics/campaigns/${resolvedId}`}>
+                <BarChart3 className="mr-1.5 h-4 w-4" />
+                View Analytics
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link to={`/dashboard/campaigns/${resolvedId}/edit`}>
+                <Edit3 className="mr-1.5 h-4 w-4" />
+                Edit Campaign
+              </Link>
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
