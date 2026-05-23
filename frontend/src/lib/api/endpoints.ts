@@ -40,6 +40,10 @@ export const API_ENDPOINTS = {
   googleFormsImport: {
     import: "/import/google-forms/",
   },
+  campaigns: {
+    list: "/campaigns/",
+    detail: (id: string) => `/campaigns/${id}/`,
+  },
   analytics: {
     dashboard: "/analytics/dashboard/",
     survey: (id: number | string) => `/analytics/surveys/${id}/`,

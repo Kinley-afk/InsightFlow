@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, CheckSquare, Clock, TrendingDown, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageContainer } from "@/components/layout/page-container";
@@ -13,18 +13,92 @@ import { AnalyticsFunnelChart } from "@/features/analytics/components/charts/fun
 import { AnalyticsSkeleton } from "@/features/analytics/components/states/analytics-skeleton";
 import { ErrorAnalyticsState } from "@/features/analytics/components/states/error-analytics-state";
 import { useSurveyAnalytics } from "@/features/analytics/hooks/use-analytics";
+import { useSurveys } from "@/features/surveys/hooks/use-surveys";
 import type { MetricCardData, TimeSeriesPoint, FunnelStep, CategoryPoint } from "@/features/analytics/types";
+
+// ─── Survey picker (shown when no valid surveyId is selected) ─────────────────
+
+function SurveyPicker() {
+  const navigate = useNavigate();
+  const { data: surveys = [], isLoading } = useSurveys();
+
+  return (
+    <PageContainer>
+      <AnalyticsShell>
+        <div>
+          <Button variant="ghost" size="sm" asChild className="-ml-2 gap-1.5 text-text-secondary">
+            <Link to="/analytics">
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+              Back to Overview
+            </Link>
+          </Button>
+        </div>
+
+        <AnalyticsDashboardHeader
+          title="Survey Analytics"
+          description="Select a survey to view its detailed analytics."
+        />
+
+        {isLoading ? (
+          <div className="space-y-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-14 animate-pulse rounded-xl bg-bg-muted" />
+            ))}
+          </div>
+        ) : surveys.length === 0 ? (
+          <div className="rounded-xl border border-border-default bg-white p-8 text-center shadow-sm dark:bg-card">
+            <p className="text-sm font-medium text-text-primary">No surveys yet</p>
+            <p className="mt-1 text-sm text-text-muted">Create a survey to start collecting analytics.</p>
+            <Button className="mt-4" size="sm" onClick={() => navigate("/surveys/create")}>
+              Create Survey
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {surveys.map((survey) => (
+              <button
+                key={survey.id}
+                type="button"
+                onClick={() => navigate(`/dashboard/analytics/surveys/${survey.id}`)}
+                className="flex w-full items-center justify-between rounded-xl border border-border-default bg-white px-5 py-4 text-left shadow-sm transition-all hover:border-primary-300 hover:bg-primary-50 hover:shadow-md dark:bg-card"
+              >
+                <div>
+                  <p className="text-sm font-semibold text-text-primary">{survey.title}</p>
+                  <p className="mt-0.5 text-xs text-text-muted capitalize">
+                    {survey.status}
+                    {survey.response_count != null && ` · ${survey.response_count} responses`}
+                  </p>
+                </div>
+                <span className="text-xs font-medium text-primary-500">View →</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </AnalyticsShell>
+    </PageContainer>
+  );
+}
+
+// ─── Main survey analytics view ───────────────────────────────────────────────
 
 export default function SurveyAnalyticsPage() {
   const { surveyId } = useParams<{ surveyId: string }>();
+
+  // If no surveyId in URL, show the picker
+  if (!surveyId) return <SurveyPicker />;
+
+  return <SurveyAnalyticsContent surveyId={surveyId} />;
+}
+
+function SurveyAnalyticsContent({ surveyId }: { surveyId: string }) {
   const { data, isLoading, isError, refetch } = useSurveyAnalytics(surveyId);
 
   const backNav = (
     <div>
       <Button variant="ghost" size="sm" asChild className="-ml-2 gap-1.5 text-text-secondary">
-        <Link to="/analytics">
+        <Link to="/dashboard/analytics/surveys">
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-          Back to Overview
+          All Surveys
         </Link>
       </Button>
     </div>
@@ -44,7 +118,7 @@ export default function SurveyAnalyticsPage() {
         <AnalyticsShell>
           {backNav}
           <ErrorAnalyticsState
-            message="Could not load survey analytics. Please try again."
+            message="Could not load survey analytics. The survey may not exist or you may not have access."
             onRetry={() => void refetch()}
           />
         </AnalyticsShell>
@@ -102,24 +176,18 @@ export default function SurveyAnalyticsPage() {
         {backNav}
 
         <AnalyticsDashboardHeader
-          title={`Survey Analytics`}
-          description={`Survey ID: ${surveyId ?? "—"}`}
+          title="Survey Analytics"
+          description={`Survey ID: ${surveyId}`}
         />
 
-        {/* KPIs */}
         <StatGrid metrics={kpiMetrics} />
 
-        {/* Response trend + completion funnel */}
         <AnalyticsGrid>
           <AnalyticsCard
             title="Response Trend"
             description="Daily response volume over the last 30 days"
           >
-            <AnalyticsTrendChart
-              data={responseTrend}
-              label="Responses"
-              height={250}
-            />
+            <AnalyticsTrendChart data={responseTrend} label="Responses" height={250} />
           </AnalyticsCard>
 
           <AnalyticsCard
@@ -130,7 +198,6 @@ export default function SurveyAnalyticsPage() {
           </AnalyticsCard>
         </AnalyticsGrid>
 
-        {/* Question engagement */}
         {questionEngagement.length > 0 && (
           <AnalyticsCard
             title="Question Engagement"
